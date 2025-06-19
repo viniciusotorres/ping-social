@@ -4,12 +4,7 @@ FROM ubuntu:latest as build
 # Atualiza pacotes e instala o JDK 17 e Maven
 RUN apt-get update && apt-get install -y openjdk-17-jdk maven
 
-# Define variáveis de ambiente (opcional durante build)
-ENV PGHOST=localhost
-ENV PGPORT=5432
-ENV PGDATABASE=ping_db
-ENV PGUSER=postgres
-ENV PGPASSWORD=1234
+
 
 # Copia os arquivos da aplicação
 COPY . .
