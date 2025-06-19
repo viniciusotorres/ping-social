@@ -11,7 +11,6 @@ import java.util.List;
 
 @Table(name = "users_tb")
 @Entity(name = "user")
-@NoArgsConstructor
 @Getter
 public class User {
 
