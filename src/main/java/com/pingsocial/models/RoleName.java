@@ -8,4 +8,12 @@ public enum RoleName {
     public String getAuthority() {
         return name();
     }
+
+    public boolean isBlank() {
+        return this == null || this.name().isBlank();
+    }
+
+    public String toUpperCase() {
+        return this.name().toUpperCase();
+    }
 }

@@ -42,6 +42,12 @@ public class UserAuthenticationFilter extends OncePerRequestFilter {
                                 new UsernamePasswordAuthenticationToken(userDetails.getUsername(), null, userDetails.getAuthorities());
 
                         SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                        if (!hasRequiredRole(user, request.getRequestURI())) {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.getWriter().write("Acesso negado: permissão insuficiente.");
+                            return;
+                        }
                     } else {
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                         response.getWriter().write("Usuário não encontrado.");
@@ -61,7 +67,6 @@ public class UserAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-
     private String recoveryToken(HttpServletRequest request) {
         String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader != null) {
@@ -70,6 +75,12 @@ public class UserAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 
+    private boolean hasRequiredRole(User user, String requestURI) {
+        if (requestURI.startsWith("/admin")) {
+            return user.getRoles().stream().anyMatch(role -> role.getName().equals("ROLE_ADMIN"));
+        }
+        return true;
+    }
 
     private boolean checkIfEndpointIsNotPublic(HttpServletRequest request) {
         String requestURI = request.getRequestURI();

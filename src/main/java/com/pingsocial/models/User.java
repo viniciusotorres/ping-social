@@ -37,8 +37,39 @@ public class User {
 
     private LocalDateTime dataDeRegistro;
 
+    private boolean ativo = false;
+
+    private String validationCode;
+
 
     public User() {
+    }
+
+    public User(Long id, String email, String password, List<Role> roles, Double latitude, Double longitude, LocalDateTime ultimoLogin, LocalDateTime dataDeRegistro) {
+        this.id = id;
+        this.email = email;
+        this.password = password;
+        this.roles = roles;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.ultimoLogin = ultimoLogin;
+        this.dataDeRegistro = dataDeRegistro;
+    }
+
+    public boolean isAtivo() {
+        return ativo;
+    }
+
+    public void setAtivo(boolean ativo) {
+        this.ativo = ativo;
+    }
+
+    public String getValidationCode() {
+        return validationCode;
+    }
+
+    public void setValidationCode(String validationCode) {
+        this.validationCode = validationCode;
     }
 
     public LocalDateTime getDataDeRegistro() {
@@ -55,17 +86,6 @@ public class User {
 
     public void setUltimoLogin(LocalDateTime ultimoLogin) {
         this.ultimoLogin = ultimoLogin;
-    }
-
-    public User(Long id, String email, String password, List<Role> roles, Double latitude, Double longitude, LocalDateTime ultimoLogin, LocalDateTime dataDeRegistro) {
-        this.id = id;
-        this.email = email;
-        this.password = password;
-        this.roles = roles;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.ultimoLogin = ultimoLogin;
-        this.dataDeRegistro = dataDeRegistro;
     }
 
     public void setId(Long id) {
