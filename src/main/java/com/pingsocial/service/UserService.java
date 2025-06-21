@@ -86,13 +86,6 @@ public class UserService {
             ));
         }
 
-        if (user.getUltimoLogin() == null) {
-            return ResponseEntity.ok(new ResponseIsNotActive(
-                    "Primeiro login detectado. Verifique seu email para ativar a conta.",
-                    user.getEmail()
-            ));
-        }
-
         updateLastLogin(userDetails.getUsername());
 
         String clientIp = request.getRemoteAddr();
@@ -134,9 +127,14 @@ public class UserService {
     }
 
     private Authentication authenticate(LoginUserDto loginUserDto) {
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(loginUserDto.email(), loginUserDto.password());
-        return authenticationManager.authenticate(authenticationToken);
+        try {
+            System.out.println("Tentando autenticar usuário: " + loginUserDto.email());
+            UsernamePasswordAuthenticationToken authenticationToken =
+                    new UsernamePasswordAuthenticationToken(loginUserDto.email(), loginUserDto.password());
+            return authenticationManager.authenticate(authenticationToken);
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao autenticar usuário: " + e.getMessage());
+        }
     }
 
     private void updateLastLogin(String email) {

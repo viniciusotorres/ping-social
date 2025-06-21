@@ -26,6 +26,12 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
+    @PostMapping
+    public ResponseEntity<ResponseCreateUserDto> createUser(@Valid @RequestBody CreateUserDto createUserDto) {
+        ResponseCreateUserDto createdUser = userService.createUser(createUserDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    }
+
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginUserDto loginUserDto, HttpServletRequest request) {
@@ -34,14 +40,9 @@ public class UserController {
     }
 
     @PostMapping("/validate")
+    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<String> validateUser(@RequestParam String email, @RequestParam String code) {
         return userService.validateUser(email, code);
-    }
-
-    @PostMapping
-    public ResponseEntity<ResponseCreateUserDto> createUser(@Valid @RequestBody CreateUserDto createUserDto) {
-            ResponseCreateUserDto createdUser = userService.createUser(createUserDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
 
     @GetMapping("/test/administrator")
