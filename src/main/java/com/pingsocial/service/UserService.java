@@ -106,9 +106,17 @@ public class UserService {
 
             return ResponseEntity.ok(new RecoveryJwtTokenDto(token));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email ou senha incorretos.");
-        }
-    }
+            if (e.getMessage().contains("Bad credentials")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ResponseLoginFailedDto("Senha incorreta.", loginUserDto.email()));
+            } else if (e.getMessage().contains("User not found")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ResponseLoginFailedDto("Email não encontrado.", loginUserDto.email()));
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ResponseLoginFailedDto("Erro ao autenticar usuário: " + e.getMessage(), loginUserDto.email()));
+            }
+        }}
 
     public ResponseEntity<String> validateUser(String email, String code) {
         User user = userRepository.findByEmail(email)
