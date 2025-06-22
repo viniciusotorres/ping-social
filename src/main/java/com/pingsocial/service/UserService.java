@@ -46,52 +46,68 @@ public class UserService {
     private EmailService emailService;
 
     public ResponseEntity<?> authenticateUser(LoginUserDto loginUserDto, HttpServletRequest request) {
-        Authentication authentication = authenticate(loginUserDto);
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        try {
+            Authentication authentication = authenticate(loginUserDto);
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+            User user = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
 
-        if (!user.isAtivo()) {
-            if (user.getValidationCode() == null) {
-                String validationCode = generateValidationCode();
-                user.setValidationCode(validationCode);
+            if (!user.isAtivo()) {
+                if (user.getValidationCode() == null) {
+                    String validationCode = generateValidationCode();
+                    user.setValidationCode(validationCode);
 
-                try {
-                    String emailBody = "<html>" +
-                            "<body>" +
-                            "<p>Olá,</p>" +
-                            "<p>Obrigado por se registrar no PingSocial. Para ativar sua conta, use o código abaixo:</p>" +
-                            "<h3>" + validationCode + "</h3>" +
-                            "<p>Se você não solicitou este email, ignore-o.</p>" +
-                            "</body>" +
-                            "</html>";
+                    try {
+                        String emailBody = "<html>" +
+                                "<body style='font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0;'>" +
+                                "<div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); overflow: hidden;'>" +
+                                "<div style='background-color: #4CAF50; color: #ffffff; padding: 20px; text-align: center;'>" +
+                                "<h1 style='margin: 0;'>The Tribe</h1>" +
+                                "</div>" +
+                                "<div style='padding: 20px;'>" +
+                                "<p style='font-size: 16px; color: #333;'>Olá,</p>" +
+                                "<p style='font-size: 16px; color: #333;'>Obrigado por se registrar na The Tribe! Para ativar sua conta, use o código abaixo:</p>" +
+                                "<div style='text-align: center; margin: 20px 0;'>" +
+                                "<h3 style='background-color: #f4f4f4; padding: 10px; border-radius: 5px; display: inline-block; color: #333;'>" + validationCode + "</h3>" +
+                                "</div>" +
+                                "<p style='font-size: 14px; color: #666;'>Se você não solicitou este email, ignore-o.</p>" +
+                                "</div>" +
+                                "<div style='background-color: #f4f4f4; padding: 10px; text-align: center; font-size: 12px; color: #999;'>" +
+                                "<p>© 2023 The Tribe. Todos os direitos reservados.</p>" +
+                                "</div>" +
+                                "</div>" +
+                                "</body>" +
+                                "</html>";
 
-                    emailService.sendEmail(
-                            user.getEmail(),
-                            "Ativação de Conta!",
-                            emailBody
-                    );
-                } catch (Exception e) {
-                    return ResponseEntity.ok(new ResponseIsNotActive(
-                            "Erro ao enviar email de ativação. Tente novamente mais tarde.",
-                            user.getEmail()
-                    ));
+                        emailService.sendEmail(
+                                user.getEmail(),
+                                "Ativação de Conta!",
+                                emailBody
+                        );
+                    } catch (Exception e) {
+                        return ResponseEntity.ok(new ResponseIsNotActive(
+                                "Erro ao enviar email de ativação. Tente novamente mais tarde.",
+                                user.getEmail()
+                        ));
+                    }
+                    userRepository.save(user);
                 }
-                userRepository.save(user);
+                return ResponseEntity.ok(new ResponseIsNotActive(
+                        "Usuário não está ativo. Verifique seu email para ativar a conta.",
+                        user.getEmail()
+                ));
             }
-            return ResponseEntity.ok(new ResponseIsNotActive(
-                    "Usuário não está ativo. Verifique seu email para ativar a conta.",
-                    user.getEmail()
-            ));
+
+            updateLastLogin(userDetails.getUsername());
+
+            String clientIp = request.getRemoteAddr();
+            String token = jwtTokenService.generateToken(userDetails, clientIp);
+
+            return ResponseEntity.ok(new RecoveryJwtTokenDto(token));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email ou senha incorretos.");
         }
-
-        updateLastLogin(userDetails.getUsername());
-
-        String clientIp = request.getRemoteAddr();
-        String token = jwtTokenService.generateToken(userDetails, clientIp);
-
-        return ResponseEntity.ok(new RecoveryJwtTokenDto(token));
     }
 
     public ResponseEntity<String> validateUser(String email, String code) {
@@ -105,15 +121,22 @@ public class UserService {
 
             try {
                 String emailBody = "<html>" +
-                        "<body>" +
+                        "<body style='font-family: Arial, sans-serif;'>" +
+                        "<div style='background-color: #f4f4f4; padding: 20px; border-radius: 10px;'>" +
+                        "<h2 style='color: #333;'>Bem-vindo à The Tribe!</h2>" +
                         "<p>Olá,</p>" +
-                        "<p>Sua conta foi ativada e está pronta para uso.</p>" +
+                        "<p>Estamos felizes em informar que sua conta foi ativada com sucesso e está pronta para uso.</p>" +
+                        "<p>Agora você faz parte da nossa tribo, onde conectamos pessoas e ideias.</p>" +
+                        "<p style='margin-top: 20px;'>Se precisar de ajuda ou tiver dúvidas, entre em contato conosco.</p>" +
+                        "<p style='margin-top: 20px;'>Atenciosamente,</p>" +
+                        "<p><strong>Equipe The Tribe</strong></p>" +
+                        "</div>" +
                         "</body>" +
                         "</html>";
 
                 emailService.sendEmail(
                         user.getEmail(),
-                        "Conta ativada com sucesso!",
+                        "Bem-vindo à The Tribe!",
                         emailBody
                 );
             } catch (Exception e) {
@@ -162,7 +185,7 @@ public class UserService {
 
             userRepository.save(newUser);
 
-            return new ResponseCreateUserDto("Usuário criado com sucesso.", newUser.getId(), createUserDto.email(),java.time.LocalDateTime.now().toString());
+            return new ResponseCreateUserDto("Usuário criado com sucesso.", newUser.getId(), createUserDto.email(), java.time.LocalDateTime.now().toString());
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Erro ao criar usuário: " + e.getMessage());
         } catch (Exception e) {
