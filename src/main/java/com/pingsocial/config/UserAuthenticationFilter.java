@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,20 +28,11 @@ public class UserAuthenticationFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(UserAuthenticationFilter.class);
 
-    private final JwtTokenService jwtTokenService;
-    private final UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
 
-    /**
-     * Construtor com injeção de dependências.
-     *
-     * @param jwtTokenService Serviço de tokens JWT
-     * @param userRepository Repositório de usuários
-     */
-    public UserAuthenticationFilter(JwtTokenService jwtTokenService, UserRepository userRepository) {
-        this.jwtTokenService = jwtTokenService;
-        this.userRepository = userRepository;
-        logger.info("UserAuthenticationFilter inicializado");
-    }
+    @Autowired
+    private JwtTokenService jwtTokenService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
