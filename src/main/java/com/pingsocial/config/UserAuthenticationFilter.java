@@ -6,26 +6,41 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 
+/**
+ * Filtro de autenticação baseado em JWT.
+ * Intercepta todas as requisições HTTP e verifica se o token JWT é válido.
+ * Se o token for válido, configura a autenticação no contexto de segurança.
+ */
 @Component
 public class UserAuthenticationFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private JwtTokenService jwtTokenService;
+    private static final Logger logger = LoggerFactory.getLogger(UserAuthenticationFilter.class);
 
-    @Autowired
-    private UserRepository userRepository;
+    private final JwtTokenService jwtTokenService;
+    private final UserRepository userRepository;
+
+    /**
+     * Construtor com injeção de dependências.
+     *
+     * @param jwtTokenService Serviço de tokens JWT
+     * @param userRepository Repositório de usuários
+     */
+    public UserAuthenticationFilter(JwtTokenService jwtTokenService, UserRepository userRepository) {
+        this.jwtTokenService = jwtTokenService;
+        this.userRepository = userRepository;
+        logger.info("UserAuthenticationFilter inicializado");
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {

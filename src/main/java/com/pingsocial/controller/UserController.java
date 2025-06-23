@@ -1,100 +1,179 @@
 package com.pingsocial.controller;
 
-import com.pingsocial.dto.CreateUserDto;
-import com.pingsocial.dto.LoginUserDto;
-import com.pingsocial.dto.RecoveryJwtTokenDto;
-import com.pingsocial.dto.ResponseCreateUserDto;
+import com.pingsocial.dto.*;
+import com.pingsocial.exception.UserNotFoundException;
 import com.pingsocial.models.User;
-import com.pingsocial.repository.UserRepository;
 import com.pingsocial.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Controlador responsável por gerenciar as operações relacionadas aos usuários.
+ * Fornece endpoints para criação, autenticação, validação e listagem de usuários.
+ *
  */
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+    private final UserService userService;
 
-    @Autowired
-    private UserRepository userRepository;
+    /**
+     * Construtor com injeção de dependências.
+     *
+     * @param userService Serviço de usuários
+     */
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     /**
      * Cria um novo usuário.
      *
-     * @param createUserDto Dados do usuário a ser criado.
-     * @return ResponseEntity contendo os detalhes do usuário criado.
+     * @param createUserDto Dados do usuário a ser criado
+     * @return ResponseEntity contendo os detalhes do usuário criado ou mensagem de erro
      */
     @PostMapping
     public ResponseEntity<ResponseCreateUserDto> createUser(@Valid @RequestBody CreateUserDto createUserDto) {
-        ResponseCreateUserDto createdUser = userService.createUser(createUserDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+        logger.info("Recebida requisição para criar usuário com email: {}", createUserDto.email());
+
+        try {
+            ResponseCreateUserDto createdUser = userService.createUser(createUserDto);
+            logger.info("Usuário criado com sucesso: {}", createdUser.email());
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+        } catch (IllegalArgumentException e) {
+            logger.error("Erro de validação ao criar usuário: {}", e.getMessage());
+            throw e; 
+        } catch (Exception e) {
+            logger.error("Erro ao criar usuário: {}", e.getMessage(), e);
+            throw e; 
+        }
     }
 
     /**
      * Autentica um usuário com base no email e senha fornecidos.
      *
-     * @param loginUserDto Dados de login do usuário.
-     * @param request      Objeto HttpServletRequest para capturar informações da requisição.
-     * @return ResponseEntity contendo o token JWT ou mensagem de erro.
+     * @param loginUserDto Dados de login do usuário
+     * @param request      Objeto HttpServletRequest para capturar informações da requisição
+     * @return ResponseEntity contendo o token JWT ou mensagem de erro
      */
     @PostMapping("/login")
-    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginUserDto loginUserDto, HttpServletRequest request) {
-        ResponseEntity<?> response = userService.authenticateUser(loginUserDto, request);
-        return response;
+        logger.info("Recebida requisição de autenticação para o usuário: {}", loginUserDto.email());
+
+        try {
+            ResponseEntity<?> response = userService.authenticateUser(loginUserDto, request);
+            logger.info("Autenticação processada para o usuário: {}", loginUserDto.email());
+            return response;
+        } catch (Exception e) {
+            logger.error("Erro durante a autenticação do usuário {}: {}", loginUserDto.email(), e.getMessage(), e);
+            throw e; // Será tratado pelo GlobalExceptionHandler
+        }
     }
 
     /**
      * Valida o código de ativação de um usuário.
      *
-     * @param email Email do usuário.
-     * @param code  Código de validação enviado por email.
-     * @return ResponseEntity contendo mensagem de sucesso ou erro.
+     * @param email Email do usuário
+     * @param code  Código de validação enviado por email
+     * @return ResponseEntity contendo mensagem de sucesso ou erro
      */
     @PostMapping("/validate")
-    @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<String> validateUser(@RequestParam String email, @RequestParam String code) {
-        return userService.validateUser(email, code);
+    public ResponseEntity<ApiResponseDto> validateUser(@RequestParam String email, @RequestParam String code) {
+        logger.info("Recebida requisição para validar código de ativação para o usuário: {}", email);
+
+        try {
+            ResponseEntity<String> response = userService.validateUser(email, code);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                logger.info("Código de validação aceito para o usuário: {}", email);
+                return ResponseEntity.ok(ApiResponseDto.success(response.getBody()));
+            } else {
+                logger.warn("Código de validação inválido para o usuário: {}", email);
+                return ResponseEntity
+                    .status(response.getStatusCode())
+                    .body(ApiResponseDto.error(response.getBody()));
+            }
+        } catch (UserNotFoundException e) {
+            logger.error("Usuário não encontrado durante validação: {}", email);
+            return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponseDto.error(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Erro durante validação do usuário {}: {}", email, e.getMessage(), e);
+            return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponseDto.error("Erro interno do servidor: " + e.getMessage()));
+        }
     }
 
     /**
      * Testa a autenticação de um administrador.
+     * Este endpoint requer que o usuário tenha o papel de ADMINISTRATOR.
      *
-     * @return ResponseEntity contendo mensagem de sucesso.
+     * @return ResponseEntity contendo mensagem de sucesso
      */
     @GetMapping("/test/administrator")
-    public ResponseEntity<String> getAuthenticationTest() {
-        return new ResponseEntity<>("Autenticado com sucesso", HttpStatus.OK);
+    public ResponseEntity<ApiResponseDto> getAuthenticationTest() {
+        logger.info("Recebida requisição para testar autenticação de administrador");
+        return ResponseEntity.ok(ApiResponseDto.success("Autenticado com sucesso como administrador"));
     }
 
     /**
      * Testa a autenticação de um cliente.
+     * Este endpoint requer que o usuário tenha o papel de CUSTOMER.
      *
-     * @return ResponseEntity contendo mensagem de sucesso.
+     * @return ResponseEntity contendo mensagem de sucesso
      */
     @GetMapping("/test/customer")
-    public ResponseEntity<String> getCustomerAuthenticationTest() {
-        return new ResponseEntity<>("Cliente autenticado com sucesso", HttpStatus.OK);
+    public ResponseEntity<ApiResponseDto> getCustomerAuthenticationTest() {
+        logger.info("Recebida requisição para testar autenticação de cliente");
+        return ResponseEntity.ok(ApiResponseDto.success("Autenticado com sucesso como cliente"));
     }
 
     /**
      * Retorna a lista de todos os usuários cadastrados.
      *
-     * @return ResponseEntity contendo a lista de usuários.
+     * @return ResponseEntity contendo a lista de usuários
      */
     @GetMapping("/admin/list")
-    public ResponseEntity<List<User>> getUsers() {
-        return userService.getAllUsers();
+    public ResponseEntity<ListResponseDto<UserDto>> getUsers() {
+        logger.info("Recebida requisição para listar todos os usuários");
+
+        try {
+            ResponseEntity<List<User>> response = userService.getAllUsers();
+
+            if (response.getBody() != null) {
+                List<UserDto> userDtos = response.getBody().stream()
+                        .map(UserDto::fromEntity)
+                        .collect(Collectors.toList());
+
+                logger.info("Retornando {} usuários", userDtos.size());
+                return ResponseEntity.ok(ListResponseDto.success(
+                        userDtos,
+                        "Usuários obtidos com sucesso"
+                ));
+            } else {
+                logger.warn("Nenhum usuário encontrado");
+                return ResponseEntity.ok(ListResponseDto.success(
+                        List.of(),
+                        "Nenhum usuário encontrado"
+                ));
+            }
+        } catch (Exception e) {
+            logger.error("Erro ao obter lista de usuários: {}", e.getMessage(), e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ListResponseDto.error("Erro interno do servidor: " + e.getMessage()));
+        }
     }
 }

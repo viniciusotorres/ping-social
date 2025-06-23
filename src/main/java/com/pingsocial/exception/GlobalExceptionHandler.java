@@ -18,4 +18,19 @@ public class GlobalExceptionHandler {
                 .orElse("Erro de validação.");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
     }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<String> handleUserNotFoundException(UserNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(TribeNotFoundException.class)
+    public ResponseEntity<String> handleTribeNotFoundException(TribeNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(UserAlreadyInTribeException.class)
+    public ResponseEntity<String> handleUserAlreadyInTribeException(UserAlreadyInTribeException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
 }
