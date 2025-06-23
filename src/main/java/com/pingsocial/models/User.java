@@ -7,11 +7,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Table(name = "users_tb")
 @Entity(name = "user")
-@Getter
 public class User {
 
     @Id
@@ -29,6 +30,14 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private List<Role> roles;
 
+    @ManyToMany
+    @JoinTable(
+            name = "user_tribe",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "tribe_id")
+    )
+    private Set<Tribe> tribes = new HashSet<>();
+
     private Double latitude;
 
     private Double longitude;
@@ -40,7 +49,6 @@ public class User {
     private boolean ativo = false;
 
     private String validationCode;
-
 
     public User() {
     }
@@ -134,5 +142,13 @@ public class User {
 
     public Long getId() {
         return id;
+    }
+
+    public Set<Tribe> getTribes() {
+        return tribes;
+    }
+
+    public void setTribes(Set<Tribe> tribes) {
+        this.tribes = tribes;
     }
 }
