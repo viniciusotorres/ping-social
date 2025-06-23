@@ -145,7 +145,7 @@ public class UserController {
      *
      * @return ResponseEntity contendo a lista de usuários
      */
-    @GetMapping("/admin/list")
+    @GetMapping("/list")
     public ResponseEntity<ListResponseDto<UserDto>> getUsers() {
         logger.info("Recebida requisição para listar todos os usuários");
 

@@ -50,7 +50,6 @@ public class User {
 
     private String validationCode;
 
-
     public User() {
     }
 

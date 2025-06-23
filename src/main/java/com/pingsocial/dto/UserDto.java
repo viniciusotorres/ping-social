@@ -79,4 +79,5 @@ public class UserDto {
     public void setTribeCount(int tribeCount) {
         this.tribeCount = tribeCount;
     }
+
 }

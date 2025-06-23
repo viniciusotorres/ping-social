@@ -159,7 +159,7 @@ public class UserService {
      * @param createUserDto DTO contendo os dados do novo usuário
      * @return DTO com informações sobre o usuário criado
      * @throws IllegalArgumentException se o papel especificado não existir
-     * @throws RuntimeException        se ocorrer um erro ao criar o usuário
+     * @throws RuntimeException         se ocorrer um erro ao criar o usuário
      */
     @Transactional
     public ResponseCreateUserDto createUser(CreateUserDto createUserDto) {
@@ -416,5 +416,19 @@ public class UserService {
                 "</div>" +
                 "</body>" +
                 "</html>";
+    }
+
+    /**
+     * Busca o ID do usuário pelo email.
+     *
+     * @param email Email do usuário
+     * @return ID do usuário
+     * @throws UserNotFoundException se o usuário não for encontrado
+     */
+    public Long findIdByEmail(String email) {
+        logger.info("Buscando ID do usuário pelo email: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com email: " + email));
+        return user.getId();
     }
 }

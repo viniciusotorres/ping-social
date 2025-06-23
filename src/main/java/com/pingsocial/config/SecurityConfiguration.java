@@ -63,7 +63,8 @@ public class SecurityConfiguration {
      * Endpoints que requerem autenticação (qualquer usuário autenticado).
      */
     public static final String[] ENDPOINTS_WITH_AUTHENTICATION_REQUIRED = {
-            "/api/tribes/**"
+            "/api/tribes/**",
+            "/api/users/list"
     };
 
     /**
@@ -78,7 +79,6 @@ public class SecurityConfiguration {
      */
     public static final String[] ENDPOINTS_ADMIN = {
             "/api/users/test/administrator",
-            "/api/users/admin/list"
     };
 
     /**

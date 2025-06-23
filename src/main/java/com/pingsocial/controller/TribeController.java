@@ -40,12 +40,12 @@ public class TribeController {
      */
     @PostMapping("/join")
     public ResponseEntity<ApiResponseDto> joinTribe(@Valid @RequestBody TribeJoinRequestDto request) {
-        logger.info("Recebida requisição para adicionar usuário {} à tribo {}", 
+        logger.info("Recebida requisição para adicionar usuário {} à tribo {}",
                 request.getUserId(), request.getTribeId());
 
         try {
             tribeService.joinTribe(request.getUserId(), request.getTribeId());
-            logger.info("Usuário {} adicionado com sucesso à tribo {}", 
+            logger.info("Usuário {} adicionado com sucesso à tribo {}",
                     request.getUserId(), request.getTribeId());
 
             return ResponseEntity.status(HttpStatus.OK)
@@ -91,7 +91,7 @@ public class TribeController {
 
             logger.info("Retornando {} tribos para o usuário {}", tribeDtos.size(), userId);
             return ResponseEntity.ok(ListResponseDto.success(
-                    tribeDtos, 
+                    tribeDtos,
                     "Tribos do usuário obtidas com sucesso"
             ));
         } catch (UserNotFoundException e) {
@@ -127,7 +127,7 @@ public class TribeController {
 
             logger.info("Retornando {} membros para a tribo {}", userDtos.size(), tribeId);
             return ResponseEntity.ok(ListResponseDto.success(
-                    userDtos, 
+                    userDtos,
                     "Membros da tribo obtidos com sucesso"
             ));
         } catch (TribeNotFoundException e) {
@@ -153,12 +153,12 @@ public class TribeController {
      */
     @PostMapping("/leave")
     public ResponseEntity<ApiResponseDto> leaveTribe(@Valid @RequestBody TribeJoinRequestDto request) {
-        logger.info("Recebida requisição para remover usuário {} da tribo {}", 
+        logger.info("Recebida requisição para remover usuário {} da tribo {}",
                 request.getUserId(), request.getTribeId());
 
         try {
             tribeService.leaveTribe(request.getUserId(), request.getTribeId());
-            logger.info("Usuário {} removido com sucesso da tribo {}", 
+            logger.info("Usuário {} removido com sucesso da tribo {}",
                     request.getUserId(), request.getTribeId());
 
             return ResponseEntity.status(HttpStatus.OK)
