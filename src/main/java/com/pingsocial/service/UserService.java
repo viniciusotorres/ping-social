@@ -222,9 +222,10 @@ public class UserService {
 
             List<User> users = userRepository.findAll().stream()
                     .filter(user -> !user.getEmail().equalsIgnoreCase(emailAutenticado))
+                    .filter(User::isAtivo)
                     .toList();
 
-            logger.info("Encontrados {} usuários (excluindo o próprio)", users.size());
+            logger.info("Encontrados {} usuários ativos (excluindo o próprio)", users.size());
             return ResponseEntity.ok(users);
         } catch (Exception e) {
             logger.error("Erro ao obter usuários: {}", e.getMessage(), e);
