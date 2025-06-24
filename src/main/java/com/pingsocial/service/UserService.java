@@ -93,7 +93,15 @@ public class UserService {
             String token = jwtTokenService.generateToken(userDetails, clientIp);
 
             logger.info("Usuário {} autenticado com sucesso", user.getEmail());
-            return ResponseEntity.ok(new RecoveryJwtTokenDto(token));
+            return ResponseEntity.ok(new ResponseLoginSuccessDto(
+                    token,
+                    user.getId(),
+                    user.getEmail(),
+                    user.getLatitude(),
+                    user.getLongitude(),
+                    user.isAtivo(),
+                    user.getNickname()
+            ));
         } catch (BadCredentialsException e) {
             logger.error("Credenciais inválidas para o usuário: {}", loginUserDto.email());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -178,7 +186,8 @@ public class UserService {
                     null,
                     null,
                     null,
-                    LocalDateTime.now()
+                    LocalDateTime.now(),
+                    createUserDto.nickname()
             );
 
             userRepository.save(newUser);
@@ -208,8 +217,14 @@ public class UserService {
     public ResponseEntity<List<User>> getAllUsers() {
         logger.info("Obtendo todos os usuários");
         try {
-            List<User> users = userRepository.findAll();
-            logger.info("Encontrados {} usuários", users.size());
+            String emailAutenticado = org.springframework.security.core.context.SecurityContextHolder
+                    .getContext().getAuthentication().getName();
+
+            List<User> users = userRepository.findAll().stream()
+                    .filter(user -> !user.getEmail().equalsIgnoreCase(emailAutenticado))
+                    .toList();
+
+            logger.info("Encontrados {} usuários (excluindo o próprio)", users.size());
             return ResponseEntity.ok(users);
         } catch (Exception e) {
             logger.error("Erro ao obter usuários: {}", e.getMessage(), e);

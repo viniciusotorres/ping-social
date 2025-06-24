@@ -104,6 +104,29 @@ public class FollowController {
     }
 
     /**
+     * Obtém a lista de usuários que um usuário está seguindo.
+     *
+     * @param userId ID do usuário cujos seguidos serão obtidos
+     * @return ResponseEntity com a lista de seguidos ou erro
+     */
+    @GetMapping("/following/{userId}")
+    public ResponseEntity<ListResponseDto> getFollowing(@PathVariable Long userId) {
+        logger.info("Recebida requisição para obter usuários que o usuário {} está seguindo", userId);
+
+        try {
+            var following = followService.getFollowing(userId);
+            logger.info("Lista de usuários seguidos obtida com sucesso para o usuário {}", userId);
+            return ResponseEntity.ok(ListResponseDto.success(following, "Usuários seguidos obtidos com sucesso"));
+        } catch (IllegalArgumentException e) {
+            logger.error("Erro ao obter seguidos: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ListResponseDto.error(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Erro inesperado ao obter seguidos", e);
+            return ResponseEntity.status(500).body(ListResponseDto.error("Erro interno do servidor"));
+        }
+    }
+
+    /**
      * Verifica se um usuário está seguindo outro usuário.
      *
      * @param userId       ID do usuário que está verificando
