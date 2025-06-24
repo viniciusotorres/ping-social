@@ -165,12 +165,41 @@ public class FollowService {
         }
 
         List<FollowListDto> followers = follows.stream()
-                .map(follow -> new FollowListDto(follow.getFollower().getId(), follow.getFollower().getEmail()))
+                .map(follow -> new FollowListDto(follow.getFollower().getId(), follow.getFollower().getEmail(), follow.getFollower().getNickname()))
                 .toList();
 
         logger.info("Usuário com ID {} tem {} seguidores", userId, followers.size());
         return followers;
     }
 
+    /**
+     * Obtém a lista de usuários que um usuário está seguindo.
+     *
+     * @param userId ID do usuário cujos seguidos serão obtidos
+     * @return Lista de usuários que o usuário está seguindo
+     * @throws IllegalArgumentException se userId for nulo
+     */
+    public List<FollowListDto> getFollowing(Long userId) {
+        if (userId == null) {
+            logger.error("Tentativa de obter seguidos com ID nulo. userId={}", userId);
+            throw new IllegalArgumentException("ID de usuário não pode ser nulo");
+        }
+
+        logger.info("Obtendo usuários que o usuário com ID {} está seguindo", userId);
+        List<Follow> follows = followRepository.findByFollowerId(userId);
+        if (follows.isEmpty()) {
+            logger.info("Usuário com ID {} não está seguindo ninguém", userId);
+            return List.of();
+        }
+
+        List<FollowListDto> following = follows.stream()
+                .map(follow -> new FollowListDto(follow.getFollowed().getId(), follow.getFollowed().getEmail(), follow.getFollowed().getNickname()))
+                .toList();
+
+        logger.info("Usuário com ID {} está seguindo {} usuários", userId, following.size());
+        return following;
+
+
+    }
 
 }

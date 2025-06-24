@@ -22,6 +22,9 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    @Column(unique = true)
+    private String nickname;
+
     private String password;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
@@ -53,7 +56,7 @@ public class User {
     public User() {
     }
 
-    public User(Long id, String email, String password, List<Role> roles, Double latitude, Double longitude, LocalDateTime ultimoLogin, LocalDateTime dataDeRegistro) {
+    public User(Long id, String email, String password, List<Role> roles, Double latitude, Double longitude, LocalDateTime ultimoLogin, LocalDateTime dataDeRegistro, String nickname) {
         this.id = id;
         this.email = email;
         this.password = password;
@@ -62,6 +65,7 @@ public class User {
         this.longitude = longitude;
         this.ultimoLogin = ultimoLogin;
         this.dataDeRegistro = dataDeRegistro;
+        this.nickname = nickname;
     }
 
     public boolean isAtivo() {
@@ -74,6 +78,14 @@ public class User {
 
     public String getValidationCode() {
         return validationCode;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
     public void setValidationCode(String validationCode) {

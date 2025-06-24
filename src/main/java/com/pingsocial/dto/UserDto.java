@@ -9,6 +9,7 @@ public class UserDto {
 
     private Long id;
     private String email;
+    private String nickname;
     private Double latitude;
     private Double longitude;
     private int tribeCount;
@@ -16,12 +17,21 @@ public class UserDto {
     public UserDto() {
     }
 
-    public UserDto(Long id, String email, Double latitude, Double longitude, int tribeCount) {
+    public UserDto(Long id, String email, Double latitude, Double longitude, int tribeCount, String nickname) {
         this.id = id;
         this.email = email;
         this.latitude = latitude;
         this.longitude = longitude;
         this.tribeCount = tribeCount;
+        this.nickname = nickname;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
     /**
@@ -36,7 +46,8 @@ public class UserDto {
                 user.getEmail(),
                 user.getLatitude(),
                 user.getLongitude(),
-                user.getTribes().size()
+                user.getTribes().size(),
+                user.getNickname()
         );
     }
 

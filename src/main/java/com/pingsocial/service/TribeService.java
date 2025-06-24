@@ -187,14 +187,6 @@ public class TribeService {
 
     /**
      * Lista todas as tribos disponíveis.
-     * @return Conjunto de todas as tribos
-     *
-     * @throws IllegalArgumentException se não houver tribos disponíveis
-     * @throws TribeNotFoundException se não houver tribos cadastradas
-     * @throws Exception se ocorrer um erro inesperado ao buscar as tribos
-     */
-    /**
-     * Lista todas as tribos disponíveis.
      *
      * @return Conjunto de todas as tribos
      * @throws IllegalArgumentException se não houver tribos disponíveis
