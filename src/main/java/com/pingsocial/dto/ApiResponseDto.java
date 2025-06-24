@@ -9,6 +9,7 @@ public class ApiResponseDto {
 
     private String message;
     private boolean success;
+    private Object data;
     private LocalDateTime timestamp;
 
     public ApiResponseDto() {
@@ -19,6 +20,17 @@ public class ApiResponseDto {
         this.message = message;
         this.success = success;
         this.timestamp = LocalDateTime.now();
+    }
+
+    public ApiResponseDto(Object data, String message, boolean success) {
+        this.data = data;
+        this.message = message;
+        this.success = success;
+        this.timestamp = LocalDateTime.now();
+    }
+
+    public static ApiResponseDto success(Object data, String message) {
+        return new ApiResponseDto(data, message, true);
     }
 
     public static ApiResponseDto success(String message) {
@@ -43,6 +55,14 @@ public class ApiResponseDto {
 
     public void setSuccess(boolean success) {
         this.success = success;
+    }
+
+    public Object getData() {
+        return data;
+    }
+
+    public void setData(Object data) {
+        this.data = data;
     }
 
     public LocalDateTime getTimestamp() {

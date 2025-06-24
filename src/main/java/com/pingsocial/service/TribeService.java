@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -31,12 +32,12 @@ public class TribeService {
     /**
      * Adiciona um usuário a uma tribo.
      *
-     * @param userId ID do usuário a ser adicionado
+     * @param userId  ID do usuário a ser adicionado
      * @param tribeId ID da tribo onde o usuário será adicionado
-     * @throws UserNotFoundException se o usuário não for encontrado
-     * @throws TribeNotFoundException se a tribo não for encontrada
+     * @throws UserNotFoundException       se o usuário não for encontrado
+     * @throws TribeNotFoundException      se a tribo não for encontrada
      * @throws UserAlreadyInTribeException se o usuário já for membro da tribo
-     * @throws IllegalArgumentException se userId ou tribeId forem nulos
+     * @throws IllegalArgumentException    se userId ou tribeId forem nulos
      */
     @Transactional
     public void joinTribe(Long userId, Long tribeId) {
@@ -82,10 +83,10 @@ public class TribeService {
     /**
      * Remove um usuário de uma tribo.
      *
-     * @param userId ID do usuário a ser removido
+     * @param userId  ID do usuário a ser removido
      * @param tribeId ID da tribo de onde o usuário será removido
-     * @throws UserNotFoundException se o usuário não for encontrado
-     * @throws TribeNotFoundException se a tribo não for encontrada
+     * @throws UserNotFoundException    se o usuário não for encontrado
+     * @throws TribeNotFoundException   se a tribo não for encontrada
      * @throws IllegalArgumentException se userId ou tribeId forem nulos
      */
     @Transactional
@@ -131,7 +132,7 @@ public class TribeService {
      *
      * @param userId ID do usuário
      * @return Conjunto de tribos das quais o usuário é membro
-     * @throws UserNotFoundException se o usuário não for encontrado
+     * @throws UserNotFoundException    se o usuário não for encontrado
      * @throws IllegalArgumentException se userId for nulo
      */
     @Transactional(readOnly = true)
@@ -160,7 +161,7 @@ public class TribeService {
      *
      * @param tribeId ID da tribo
      * @return Conjunto de usuários que são membros da tribo
-     * @throws TribeNotFoundException se a tribo não for encontrada
+     * @throws TribeNotFoundException   se a tribo não for encontrada
      * @throws IllegalArgumentException se tribeId for nulo
      */
     @Transactional(readOnly = true)
@@ -182,5 +183,48 @@ public class TribeService {
         logger.info("Encontrados {} membros para a tribo {}", members.size(), tribeId);
 
         return members;
+    }
+
+    /**
+     * Lista todas as tribos disponíveis.
+     * @return Conjunto de todas as tribos
+     *
+     * @throws IllegalArgumentException se não houver tribos disponíveis
+     * @throws TribeNotFoundException se não houver tribos cadastradas
+     * @throws Exception se ocorrer um erro inesperado ao buscar as tribos
+     */
+    /**
+     * Lista todas as tribos disponíveis.
+     *
+     * @return Conjunto de todas as tribos
+     * @throws IllegalArgumentException se não houver tribos disponíveis
+     * @throws TribeNotFoundException   se não houver tribos cadastradas
+     * @throws Exception                se ocorrer um erro inesperado ao buscar as tribos
+     */
+    @Transactional(readOnly = true)
+    public List<Tribe> listAllTribes() {
+        logger.info("Iniciando busca de todas as tribos");
+
+        List<Tribe> tribes = tribeRepository.findAll();
+
+        if (tribes.isEmpty()) {
+            logger.error("Nenhuma tribo encontrada");
+            throw new TribeNotFoundException("Nenhuma tribo cadastrada");
+        }
+
+        logger.info("Encontradas {} tribos", tribes.size());
+        return tribes;
+    }
+
+    /**
+     * Verifica se o usuário autenticado é membro de alguma tribo.
+     *
+     * @return true se o usuário tiver pelo menos uma tribo, false caso contrário
+     */
+    public boolean userHasAnyTribe() {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new com.pingsocial.exception.UserNotFoundException(email));
+        return user.getTribes() != null && !user.getTribes().isEmpty();
     }
 }
