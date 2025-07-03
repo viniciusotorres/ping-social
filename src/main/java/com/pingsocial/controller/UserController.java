@@ -249,4 +249,52 @@ public class UserController implements UserApi {
         }
     }
 
+    /**
+     * Salva a localização do usuário informado.
+     *
+     * @param userId ID do usuário
+     * @param locationDto Dados de localização
+     * @return ResponseEntity com mensagem de sucesso ou erro
+     */
+    @PostMapping("/saveLocation/{userId}")
+    public ResponseEntity<ApiResponseDto> saveLocation(
+            @PathVariable Long userId,
+            @RequestBody LocationDto locationDto) {
+        logger.info("Recebida requisição para salvar localização do usuário: {}", userId);
+
+        try {
+            userService.saveLocation(userId, locationDto);
+            logger.info("Localização salva com sucesso para o usuário: {}", userId);
+            return ResponseEntity.ok(ApiResponseDto.success("Localização salva com sucesso"));
+        } catch (Exception e) {
+            logger.error("Erro ao salvar localização do usuário {}: {}", userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponseDto.error("Erro ao salvar localização: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Obtém a localização (latitude, longitude e distância) do usuário informado.
+     *
+     * @param userId ID do usuário a ser consultado.
+     * @return ResponseEntity contendo LocationDto com os dados de localização ou status de erro.
+     */
+    @GetMapping("/getLocation/{userId}")
+    public ResponseEntity<LocationDto> getLocation(@PathVariable Long userId) {
+        logger.info("Recebida requisição para obter localização do usuário: {}", userId);
+
+        try {
+            LocationDto location = userService.getLocationById(userId);
+            if (location == null) {
+                logger.warn("Localização não encontrada para o usuário: {}", userId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+            logger.info("Localização obtida com sucesso para o usuário: {}", userId);
+            return ResponseEntity.ok(location);
+        } catch (Exception e) {
+            logger.error("Erro ao obter localização do usuário {}: {}", userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
 }

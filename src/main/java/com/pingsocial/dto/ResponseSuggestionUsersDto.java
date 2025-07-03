@@ -8,6 +8,7 @@ public record ResponseSuggestionUsersDto(
         String avatarInitials,
         int countFollowers,
         List<String> namesTribes,
-        boolean isFollowing
+        boolean isFollowing,
+        double distanceFromUser
 ) {
 }
