@@ -2,6 +2,7 @@ package com.pingsocial.service;
 
 import com.pingsocial.dto.FollowListDto;
 import com.pingsocial.models.Follow;
+import com.pingsocial.models.User;
 import com.pingsocial.repository.FollowRepository;
 import com.pingsocial.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -201,5 +202,14 @@ public class FollowService {
 
 
     }
+
+    public long getFollowersCount(User user) {
+        return followRepository.countByFollowed(user);
+    }
+
+    public long getFollowingCount(User user) {
+        return followRepository.countByFollower(user);
+    }
+
 
 }

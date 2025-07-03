@@ -63,4 +63,5 @@ public class Follow {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
 }
