@@ -249,22 +249,22 @@ public class UserService {
             String emailAutenticado = org.springframework.security.core.context.SecurityContextHolder
                     .getContext().getAuthentication().getName();
 
-            // Buscar o ID do usuário autenticado
-            Long userIdAutenticado = userRepository.findByEmail(emailAutenticado)
-                    .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com email: " + emailAutenticado))
-                    .getId();
-
             List<ResponseSuggestionUsersDto> suggestions = userRepository.findAll().stream()
                     .filter(user -> !user.getEmail().equalsIgnoreCase(emailAutenticado))
                     .filter(User::isAtivo)
-                    .map(user -> new ResponseSuggestionUsersDto(
-                            user.getId(),
-                            user.getNickname(),
-                            getAvatarInitials(user.getEmail()),
-                            getCountFollowers(user.getEmail()),
-                            getNamesTribes(user.getEmail()),
-                            isFollowing(emailAutenticado, user.getId())
-                    ))
+                    .map(user -> {
+                        LocationDto location = getLocationById(user.getId());
+                        double distance = location != null ? location.distanciaKm() : 0.0;
+                        return new ResponseSuggestionUsersDto(
+                                user.getId(),
+                                user.getNickname(),
+                                getAvatarInitials(user.getEmail()),
+                                getCountFollowers(user.getEmail()),
+                                getNamesTribes(user.getEmail()),
+                                isFollowing(emailAutenticado, user.getId()),
+                                distance
+                        );
+                    })
                     .toList();
 
             logger.info("Encontradas {} sugestões de usuários", suggestions.size());
@@ -603,6 +603,68 @@ public class UserService {
         );
 
     }
+
+    /**
+     * Atualiza a localização (latitude e longitude) do usuário informado.
+     *
+     * @param userId ID do usuário
+     * @param locationDto DTO contendo latitude e longitude
+     * @throws UserNotFoundException se o usuário não for encontrado
+     */
+    @Transactional
+    public void saveLocation(Long userId, LocationDto locationDto)  {
+        logger.info("Salvando localização para o usuário com ID: {}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com ID: " + userId));
+
+        user.setLatitude(locationDto.latitude());
+        user.setLongitude(locationDto.longitude());
+        userRepository.save(user);
+        logger.info("Localização atualizada para o usuário com ID: {}", userId);
+    }
+
+    @Transactional(readOnly = true)
+    public LocationDto getLocationById(Long id) {
+        logger.info("Buscando localização para o usuário com ID: {}", id);
+
+        // Usuário autenticado
+        String emailAutenticado = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+        User userAuth = userRepository.findByEmail(emailAutenticado)
+                .orElseThrow(() -> new UserNotFoundException("Usuário autenticado não encontrado: " + emailAutenticado));
+
+        // Usuário de destino
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com ID: " + id));
+
+        if (user.getLatitude() == null || user.getLongitude() == null ||
+                userAuth.getLatitude() == null || userAuth.getLongitude() == null) {
+            logger.warn("Localização não encontrada para um dos usuários (ID: {}, Auth: {})", id, userAuth.getId());
+            return null;
+        }
+
+        double distanciaKm = calcularDistanciaKm(
+                userAuth.getLatitude(), userAuth.getLongitude(),
+                user.getLatitude(), user.getLongitude()
+        );
+
+        return new LocationDto(user.getLatitude(), user.getLongitude(), distanciaKm);
+    }
+
+    /**
+     * Calcula a distância entre dois pontos geográficos usando a fórmula de Haversine.
+     */
+    private double calcularDistanciaKm(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371; // Raio da Terra em km
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
 
 
 }

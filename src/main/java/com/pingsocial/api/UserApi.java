@@ -178,4 +178,66 @@ public interface UserApi {
             Long id
     );
 
+    /**
+     * Salva a localização (latitude e longitude) do usuário informado.
+     *
+     * @param userId      ID do usuário a ter a localização atualizada.
+     * @param locationDto Objeto contendo latitude e longitude.
+     * @return ResponseEntity com mensagem de sucesso ou erro.
+     */
+    @Operation(
+            summary = "Salva a localização do usuário",
+            description = "Salva a latitude e longitude do usuário informado."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Localização salva com sucesso",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Erro ao salvar localização"
+            )
+    })
+    ResponseEntity<ApiResponseDto> saveLocation(
+            @PathVariable
+            @Parameter(description = "ID do usuário", required = true)
+            Long userId,
+            @RequestBody
+            @Parameter(description = "Dados de localização (latitude e longitude)", required = true)
+            LocationDto locationDto
+    );
+
+    /**
+     * Obtém a localização (latitude, longitude e distância) do usuário informado.
+     *
+     * @param userId ID do usuário a ser consultado.
+     * @return ResponseEntity contendo LocationDto com os dados de localização ou status de erro.
+     */
+    @Operation(
+            summary = "Obtém a localização do usuário",
+            description = "Retorna a latitude, longitude e distância (em km) do usuário informado em relação ao usuário autenticado."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Localização obtida com sucesso",
+                    content = @Content(schema = @Schema(implementation = LocationDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Localização não encontrada"
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Erro ao obter localização"
+            )
+    })
+    ResponseEntity<LocationDto> getLocation(
+            @PathVariable
+            @Parameter(description = "ID do usuário", required = true)
+            Long userId
+    );
+
 }
