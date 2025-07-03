@@ -3,6 +3,8 @@ package com.pingsocial.models;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Table(name = "posts_tb")
 @Entity(name = "post")
@@ -16,9 +18,13 @@ public class Post {
     @JoinColumn(name = "user_id", nullable = false)
     private User author;
 
-    @ManyToOne
-    @JoinColumn(name = "tribe_id", nullable = true)
-    private Tribe tribe;
+    @ManyToMany
+    @JoinTable(
+            name = "post_tribes",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "tribe_id")
+    )
+    private Set<Tribe> tribes = new HashSet<>();
 
     private String content;
 
@@ -27,10 +33,10 @@ public class Post {
     public Post() {
     }
 
-    public Post(Long id, User author, Tribe tribe, String content, LocalDateTime createdAt) {
+    public Post(Long id, User author, Set<Tribe> tribes, String content, LocalDateTime createdAt) {
         this.id = id;
         this.author = author;
-        this.tribe = tribe;
+        this.tribes = tribes;
         this.content = content;
         this.createdAt = createdAt;
     }
@@ -51,12 +57,12 @@ public class Post {
         this.author = author;
     }
 
-    public Tribe getTribe() {
-        return tribe;
+    public Set<Tribe> getTribes() {
+        return tribes;
     }
 
-    public void setTribe(Tribe tribe) {
-        this.tribe = tribe;
+    public void setTribes(Set<Tribe> tribes) {
+        this.tribes = tribes;
     }
 
     public LocalDateTime getCreatedAt() {

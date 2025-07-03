@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class TribeService {
@@ -219,4 +220,36 @@ public class TribeService {
                 .orElseThrow(() -> new com.pingsocial.exception.UserNotFoundException(email));
         return user.getTribes() != null && !user.getTribes().isEmpty();
     }
+
+    public Set<Long> getTribeIdsByUserId(Long userId) {
+        if (userId == null) {
+            logger.error("Tentativa de obter IDs de tribos com ID de usuário nulo");
+            throw new IllegalArgumentException("ID de usuário não pode ser nulo");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    logger.error("Usuário não encontrado com ID: {}", userId);
+                    return new UserNotFoundException(userId);
+                });
+
+        Set<Long> tribeIds = user.getTribes().stream()
+                .map(Tribe::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        logger.info("Encontrados {} IDs de tribos para o usuário {}", tribeIds.size(), userId);
+        return tribeIds;
+    }
+
+    public Tribe getTribeById(Long tribeId) {
+        if (tribeId == null) {
+            throw new IllegalArgumentException("ID da tribo não pode ser nulo");
+        }
+        return tribeRepository.findById(tribeId).orElse(null);
+    }
+
+
+
+
 }
