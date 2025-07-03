@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -130,5 +132,50 @@ public interface UserApi {
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     ResponseEntity<ListResponseDto<UserDto>> getUsers();
+
+
+    @Operation(
+            summary = "Sugestões de usuários",
+            description = "Retorna sugestões de usuários para o usuário autenticado, excluindo ele mesmo e apenas usuários ativos."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Sugestões de usuários obtidas com sucesso",
+                    content = @Content(schema = @Schema(implementation = ListResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Erro interno do servidor"
+            )
+    })
+    @GetMapping("/suggestionsUsers")
+    ResponseEntity<ListResponseDto<ResponseSuggestionUsersDto>> getSuggestionsUsers();
+
+    @Operation(
+            summary = "Obtém informações do usuário",
+            description = "Retorna informações detalhadas do usuário pelo ID informado."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Informações do usuário obtidas com sucesso",
+                    content = @Content(schema = @Schema(implementation = ResponseUserInfoDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Usuário não encontrado"
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Erro interno do servidor"
+            )
+    })
+    @GetMapping("/myInfo/{id}")
+    ResponseEntity<ResponseUserInfoDto> getMyInfo(
+            @PathVariable
+            @Parameter(description = "ID do usuário", required = true)
+            Long id
+    );
 
 }

@@ -185,4 +185,68 @@ public class UserController implements UserApi {
                     .body(ListResponseDto.error("Erro interno do servidor: " + e.getMessage()));
         }
     }
+
+    /**
+     * Endpoint para obter sugestões de usuários para o usuário autenticado.
+     * Retorna uma lista de sugestões, excluindo o próprio usuário e apenas usuários ativos.
+     *
+     * @return ResponseEntity contendo um ListResponseDto com as sugestões de usuários ou mensagem de erro.
+     */
+    @GetMapping("/suggestionsUsers")
+    public ResponseEntity<ListResponseDto<ResponseSuggestionUsersDto>> getSuggestionsUsers() {
+        logger.info("Recebida requisição para obter sugestões de usuários");
+
+        try {
+            List<ResponseSuggestionUsersDto> suggestions = userService.getSuggestionsUsers().getBody();
+            if (suggestions == null || suggestions.isEmpty()) {
+                logger.warn("Nenhuma sugestão de usuário encontrada");
+                return ResponseEntity.ok(ListResponseDto.success(
+                        List.of(),
+                        "Nenhuma sugestão de usuário encontrada"
+                ));
+            }
+            logger.info("Retornando {} sugestões de usuários", suggestions.size());
+            return ResponseEntity.ok(ListResponseDto.success(
+                    suggestions,
+                    "Sugestões de usuários obtidas com sucesso"
+            ));
+        } catch (Exception e) {
+            logger.error("Erro ao obter sugestões de usuários: {}", e.getMessage(), e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ListResponseDto.error("Erro interno do servidor: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint para obter informações detalhadas de um usuário pelo seu ID.
+     *
+     * @param id ID do usuário a ser consultado.
+     * @return ResponseEntity contendo ResponseUserInfoDto com os dados do usuário ou status de erro.
+     */
+    @GetMapping("/myInfo/{id}")
+    public ResponseEntity<ResponseUserInfoDto> getMyInfo(
+            @PathVariable @Parameter(description = "ID do usuário") Long id) {
+        logger.info("Recebida requisição para obter informações do usuário com ID: {}", id);
+
+        try {
+            ResponseUserInfoDto userInfo = userService.getMyInfo(id);
+            if (userInfo == null) {
+                logger.warn("Usuário com ID {} não encontrado", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(null);
+            }
+            logger.info("Informações do usuário com ID {} obtidas com sucesso", id);
+            return ResponseEntity.ok(userInfo);
+        } catch (UserNotFoundException e) {
+            logger.error("Usuário não encontrado: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(null);
+        } catch (Exception e) {
+            logger.error("Erro ao obter informações do usuário {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
+        }
+    }
+
 }

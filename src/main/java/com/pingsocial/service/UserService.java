@@ -8,6 +8,7 @@ import com.pingsocial.exception.AuthenticationException;
 import com.pingsocial.exception.EmailSendingException;
 import com.pingsocial.exception.InvalidValidationCodeException;
 import com.pingsocial.exception.UserNotFoundException;
+import com.pingsocial.models.Follow;
 import com.pingsocial.models.Role;
 import com.pingsocial.models.RoleName;
 import com.pingsocial.models.User;
@@ -41,6 +42,7 @@ public class UserService {
     private final SecurityConfiguration securityConfiguration;
     private final RoleRepository roleRepository;
     private final EmailService emailService;
+    private final FollowService followService;
 
     /**
      * Construtor com injeção de dependências.
@@ -51,13 +53,14 @@ public class UserService {
             UserRepository userRepository,
             SecurityConfiguration securityConfiguration,
             RoleRepository roleRepository,
-            EmailService emailService) {
+            EmailService emailService, FollowService followService) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenService = jwtTokenService;
         this.userRepository = userRepository;
         this.securityConfiguration = securityConfiguration;
         this.roleRepository = roleRepository;
         this.emailService = emailService;
+        this.followService = followService;
     }
 
     /**
@@ -231,6 +234,114 @@ public class UserService {
             logger.error("Erro ao obter usuários: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
+    }
+
+    /**
+     * Obtém sugestões de usuários para o usuário autenticado.
+     * Exclui o próprio usuário autenticado da lista e apenas retorna usuários ativos.
+     *
+     * @return ResponseEntity contendo uma lista de ResponseSuggestionUsersDto com as sugestões de usuários
+     */
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<ResponseSuggestionUsersDto>> getSuggestionsUsers() {
+        logger.info("Obtendo sugestões de usuários");
+        try {
+            String emailAutenticado = org.springframework.security.core.context.SecurityContextHolder
+                    .getContext().getAuthentication().getName();
+
+            // Buscar o ID do usuário autenticado
+            Long userIdAutenticado = userRepository.findByEmail(emailAutenticado)
+                    .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com email: " + emailAutenticado))
+                    .getId();
+
+            List<ResponseSuggestionUsersDto> suggestions = userRepository.findAll().stream()
+                    .filter(user -> !user.getEmail().equalsIgnoreCase(emailAutenticado))
+                    .filter(User::isAtivo)
+                    .map(user -> new ResponseSuggestionUsersDto(
+                            user.getId(),
+                            user.getNickname(),
+                            getAvatarInitials(user.getEmail()),
+                            getCountFollowers(user.getEmail()),
+                            getNamesTribes(user.getEmail()),
+                            isFollowing(emailAutenticado, user.getId())
+                    ))
+                    .toList();
+
+            logger.info("Encontradas {} sugestões de usuários", suggestions.size());
+            return ResponseEntity.ok(suggestions);
+        } catch (Exception e) {
+            logger.error("Erro ao obter sugestões de usuários: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    /**
+     * Obtém as iniciais do avatar a partir do nickname do usuário, usando o email para busca.
+     *
+     * @param email Email do usuário
+     * @return String com as duas primeiras letras do nickname em maiúsculo
+     * @throws UserNotFoundException se o usuário não for encontrado
+     */
+    public String getAvatarInitials(String email) {
+        logger.info("Obtendo iniciais do avatar para o email: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com email: " + email));
+        return user.getNickname().substring(0, 2).toUpperCase();
+    }
+
+    /**
+     * Retorna a quantidade de seguidores de um usuário identificado pelo email.
+     *
+     * @param email Email do usuário
+     * @return Quantidade de seguidores (int)
+     * @throws UserNotFoundException se o usuário não for encontrado
+     */
+    public int getCountFollowers(String email) {
+        logger.info("Obtendo contagem de seguidores para o email: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com email: " + email));
+
+        Long followersCount = followService.getFollowersCount(user);
+        return followersCount != null ? followersCount.intValue() : 0;
+    }
+
+    public int getCountFollowing(String email) {
+        logger.info("Obtendo contagem de seguindo para o email: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com email: " + email));
+
+        Long followingCount = followService.getFollowingCount(user);
+        return followingCount != null ? followingCount.intValue() : 0;
+    }
+    /**
+     * Obtém a lista de nomes das tribos do usuário identificado pelo email.
+     *
+     * @param email Email do usuário
+     * @return Lista de nomes das tribos
+     * @throws UserNotFoundException se o usuário não for encontrado
+     */
+    public List<String> getNamesTribes(String email) {
+        logger.info("Obtendo nomes das tribos para o email: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com email: " + email));
+        return user.getTribes().stream()
+                .map(tribe -> tribe.getName())
+                .toList();
+    }
+
+    /**
+     * Verifica se o usuário identificado pelo email está seguindo o usuário de determinado ID.
+     *
+     * @param email  Email do usuário que está seguindo
+     * @param userId ID do usuário a ser verificado
+     * @return true se estiver seguindo, false caso contrário
+     * @throws UserNotFoundException se o usuário não for encontrado
+     */
+    public boolean isFollowing(String email, Long userId) {
+        logger.info("Verificando se o usuário com email {} está seguindo o usuário com ID {}", email, userId);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com email: " + email));
+        return followService.isFollowing(user.getId(), userId);
     }
 
     /**
@@ -447,4 +558,51 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com email: " + email));
         return user.getId();
     }
+
+    /**
+     * Calcula o número de dias desde a criação do usuário até hoje.
+     *
+     * @param email Email do usuário
+     * @return Quantidade de dias desde a criação da conta
+     * @throws UserNotFoundException se o usuário não for encontrado
+     */
+    public Long getDaysActive(String email) {
+        logger.info("Obtendo dias ativos para o email: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com email: " + email));
+
+        LocalDateTime dataCriacao = user.getDataDeRegistro();
+        if (dataCriacao == null) {
+            return 0L;
+        }
+
+        long daysActive = LocalDateTime.now().toLocalDate().toEpochDay() - dataCriacao.toLocalDate().toEpochDay();
+        return daysActive;
+    }
+
+    /**
+     * Busca o usuário pelo ID.
+     *
+     * @param id ID do usuário
+     * @return Usuário encontrado
+     * @throws UserNotFoundException se o usuário não for encontrado
+     */
+    public ResponseUserInfoDto getMyInfo(Long id) {
+        logger.info("Buscando usuário pelo ID: {}", id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com ID: " + id));
+
+        return new ResponseUserInfoDto(
+                user.getId(),
+                user.getNickname(),
+                getAvatarInitials(user.getEmail()),
+                getCountFollowers(user.getEmail()),
+                getCountFollowing(user.getEmail()),
+                getDaysActive(user.getEmail()),
+                getNamesTribes(user.getEmail())
+        );
+
+    }
+
+
 }
