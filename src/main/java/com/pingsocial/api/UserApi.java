@@ -1,0 +1,134 @@
+package com.pingsocial.api;
+
+import com.pingsocial.dto.*;
+import com.pingsocial.exception.UserNotFoundException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+
+@Tag(
+        name = "Gerenciamento de Usuários",
+        description = "Endpoints para operações relacionadas a usuários (CRUD, autenticação, etc.)"
+)
+public interface UserApi {
+    @Operation(
+            summary = "Cria um novo usuário",
+            description = "Cria um usuário com os dados fornecidos e retorna os detalhes do usuário criado."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Usuário criado com sucesso",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseCreateUserDto.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
+    })
+    ResponseEntity<ResponseCreateUserDto> createUser(
+            @Parameter(
+                    description = "Dados do usuário a ser criado",
+                    required = true,
+                    schema = @Schema(implementation = CreateUserDto.class)
+            )
+            @Valid @RequestBody CreateUserDto createUserDto
+    );
+
+    @Operation(
+            summary = "Autentica um usuário",
+            description = "Autentica um usuário com base no email e senha fornecidos e retorna um token JWT."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Usuário autenticado com sucesso",
+                    content = @Content(mediaType = "application/json")
+            ),
+            @ApiResponse(responseCode = "401", description = "Credenciais inválidas"),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
+    })
+    ResponseEntity<?> authenticateUser(
+            @Parameter(
+                    description = "Dados de login do usuário",
+                    required = true,
+                    schema = @Schema(implementation = LoginUserDto.class)
+            )
+            @Valid @RequestBody LoginUserDto loginUserDto,
+            HttpServletRequest request
+    );
+
+    @Operation(
+            summary = "Valida o código de ativação de um usuário",
+            description = "Valida o código de ativação enviado por email para o usuário."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Código validado com sucesso",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class))
+            ),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado"),
+            @ApiResponse(responseCode = "400", description = "Código inválido"),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
+    })
+    ResponseEntity<ApiResponseDto> validateUser(
+            @Parameter(description = "Email do usuário", required = true)
+            @RequestParam String email,
+            @Parameter(description = "Código de validação enviado por email", required = true)
+            @RequestParam String code
+    );
+
+    @Operation(
+            summary = "Testa autenticação de administrador",
+            description = "Endpoint protegido que retorna sucesso se o usuário for ADMINISTRATOR."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Autenticado com sucesso como administrador",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class))
+            ),
+            @ApiResponse(responseCode = "403", description = "Acesso negado")
+    })
+    ResponseEntity<ApiResponseDto> getAuthenticationTest();
+
+    @Operation(
+            summary = "Testa autenticação de cliente",
+            description = "Endpoint protegido que retorna sucesso se o usuário for CUSTOMER."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Autenticado com sucesso como cliente",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class))
+            ),
+            @ApiResponse(responseCode = "403", description = "Acesso negado")
+    })
+    ResponseEntity<ApiResponseDto> getCustomerAuthenticationTest();
+
+    @Operation(
+            summary = "Lista todos os usuários",
+            description = "Retorna a lista de todos os usuários cadastrados."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Lista de usuários obtida com sucesso",
+                    content = @Content(schema = @Schema(implementation = ListResponseDto.class))
+            ),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
+    })
+    ResponseEntity<ListResponseDto<UserDto>> getUsers();
+
+}

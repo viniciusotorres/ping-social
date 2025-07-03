@@ -1,9 +1,11 @@
 package com.pingsocial.controller;
 
+import com.pingsocial.api.UserApi;
 import com.pingsocial.dto.*;
 import com.pingsocial.exception.UserNotFoundException;
 import com.pingsocial.models.User;
 import com.pingsocial.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -11,6 +13,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,7 +28,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/users")
-public class UserController {
+public class UserController implements UserApi {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
     private final UserService userService;
@@ -42,8 +48,11 @@ public class UserController {
      * @param createUserDto Dados do usuário a ser criado
      * @return ResponseEntity contendo os detalhes do usuário criado ou mensagem de erro
      */
+
+
     @PostMapping
-    public ResponseEntity<ResponseCreateUserDto> createUser(@Valid @RequestBody CreateUserDto createUserDto) {
+    public ResponseEntity<ResponseCreateUserDto> createUser(
+            @Valid @RequestBody CreateUserDto createUserDto) {
         logger.info("Recebida requisição para criar usuário com email: {}", createUserDto.email());
 
         try {
@@ -52,10 +61,10 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
         } catch (IllegalArgumentException e) {
             logger.error("Erro de validação ao criar usuário: {}", e.getMessage());
-            throw e; 
+            throw e;
         } catch (Exception e) {
             logger.error("Erro ao criar usuário: {}", e.getMessage(), e);
-            throw e; 
+            throw e;
         }
     }
 
@@ -100,19 +109,19 @@ public class UserController {
             } else {
                 logger.warn("Código de validação inválido para o usuário: {}", email);
                 return ResponseEntity
-                    .status(response.getStatusCode())
-                    .body(ApiResponseDto.error(response.getBody()));
+                        .status(response.getStatusCode())
+                        .body(ApiResponseDto.error(response.getBody()));
             }
         } catch (UserNotFoundException e) {
             logger.error("Usuário não encontrado durante validação: {}", email);
             return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(ApiResponseDto.error(e.getMessage()));
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseDto.error(e.getMessage()));
         } catch (Exception e) {
             logger.error("Erro durante validação do usuário {}: {}", email, e.getMessage(), e);
             return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponseDto.error("Erro interno do servidor: " + e.getMessage()));
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponseDto.error("Erro interno do servidor: " + e.getMessage()));
         }
     }
 

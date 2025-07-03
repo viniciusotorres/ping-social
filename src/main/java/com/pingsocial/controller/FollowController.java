@@ -1,5 +1,6 @@
 package com.pingsocial.controller;
 
+import com.pingsocial.api.FollowApi;
 import com.pingsocial.dto.ApiResponseDto;
 import com.pingsocial.dto.FollowUserRequestDto;
 import com.pingsocial.dto.ListResponseDto;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/follow")
-public class FollowController {
+public class FollowController implements FollowApi {
 
     private static final Logger logger = LoggerFactory.getLogger(FollowController.class);
     private final FollowService followService;

@@ -1,5 +1,6 @@
 package com.pingsocial.controller;
 
+import com.pingsocial.api.TribeApi;
 import com.pingsocial.dto.*;
 import com.pingsocial.exception.TribeNotFoundException;
 import com.pingsocial.exception.UserAlreadyInTribeException;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/tribes")
-public class TribeController {
+public class TribeController implements TribeApi {
 
     private static final Logger logger = LoggerFactory.getLogger(TribeController.class);
     private final TribeService tribeService;
