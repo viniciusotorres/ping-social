@@ -48,6 +48,14 @@ public class SecurityConfiguration {
         logger.info("SecurityConfiguration inicializada");
     }
 
+    public static final String[] SWAGGER_WHITELIST = {
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-resources/**",
+            "/swagger-resources",
+            "/swagger-ui.html"
+    };
+
     /**
      * Endpoints que não requerem autenticação.
      */
@@ -56,7 +64,7 @@ public class SecurityConfiguration {
             "/api/users",
             "/api/users/validate",
             "/health",
-            "/"
+            "/",
     };
 
     /**
@@ -97,6 +105,7 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(SWAGGER_WHITELIST).permitAll()
                         .requestMatchers(ENDPOINTS_WITH_AUTHENTICATION_NOT_REQUIRED).permitAll()
                         .requestMatchers(ENDPOINTS_WITH_AUTHENTICATION_REQUIRED).authenticated()
                         .requestMatchers(ENDPOINTS_ADMIN).hasAuthority("ROLE_ADMIN")
