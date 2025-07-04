@@ -313,6 +313,7 @@ public class UserService {
         Long followingCount = followService.getFollowingCount(user);
         return followingCount != null ? followingCount.intValue() : 0;
     }
+
     /**
      * Obtém a lista de nomes das tribos do usuário identificado pelo email.
      *
@@ -607,12 +608,12 @@ public class UserService {
     /**
      * Atualiza a localização (latitude e longitude) do usuário informado.
      *
-     * @param userId ID do usuário
+     * @param userId      ID do usuário
      * @param locationDto DTO contendo latitude e longitude
      * @throws UserNotFoundException se o usuário não for encontrado
      */
     @Transactional
-    public void saveLocation(Long userId, LocationDto locationDto)  {
+    public void saveLocation(Long userId, LocationDto locationDto) {
         logger.info("Salvando localização para o usuário com ID: {}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com ID: " + userId));
@@ -665,6 +666,93 @@ public class UserService {
         return R * c;
     }
 
+    private String forgotPasswordEmailTemplate(String validationCode) {
+        return "<html>" +
+                "<body style='font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0;'>" +
+                "<div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); overflow: hidden;'>" +
+                "<div style='background-color: #4CAF50; color: #ffffff; padding: 20px; text-align: center;'>" +
+                "<h1 style='margin: 0;'>The Tribe</h1>" +
+                "</div>" +
+                "<div style='padding: 20px;'>" +
+                "<p style='font-size: 16px; color: #333;'>Olá,</p>" +
+                "<p style='font-size: 16px; color: #333;'>Você solicitou a redefinição de senha. Use o código abaixo:</p>" +
+                "<div style='text-align: center; margin: 20px 0;'>" +
+                "<h3 style='background-color: #f4f4f4; padding: 10px; border-radius: 5px; display: inline-block; color: #333;'>" + validationCode + "</h3>" +
+                "</div>" +
+                "<p style='font-size: 14px; color: #666;'>Se você não solicitou este email, ignore-o.</p>" +
+                "</div>" +
+                "<div style='background-color: #f4f4f4; padding: 10px; text-align: center; font-size: 12px; color: #999;'>" +
+                "<p>© 2025 The Tribe. Todos os direitos reservados.</p>" +
+                "</div>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
+    }
 
+    /**
+     * Envia um email de redefinição de senha para o usuário.
+     *
+     * @param user Usuário para quem o email será enviado
+     * @throws EmailSendingException se ocorrer um erro ao enviar o email
+     */
+    public void sendForgotPasswordEmail(User user) {
+        String validationCode = generateValidationCode();
+        user.setValidationCode(validationCode);
+
+        String emailBody = forgotPasswordEmailTemplate(validationCode);
+
+        try {
+            emailService.sendEmail(
+                    user.getEmail(),
+                    "Redefinição de Senha",
+                    emailBody
+            );
+            userRepository.save(user);
+            logger.info("Email de redefinição de senha enviado para: {}", user.getEmail());
+        } catch (Exception e) {
+            logger.error("Erro ao enviar email de redefinição de senha: {}", e.getMessage(), e);
+            throw new EmailSendingException("Erro ao enviar email de redefinição de senha: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Inicia o processo de recuperação de senha enviando um código de validação por email.
+     *
+     * @param forgotPasswordDto DTO contendo o email do usuário
+     * @throws UserNotFoundException se o usuário não for encontrado
+     */
+    @Transactional
+    public void forgotPassword(ForgotPasswordDto forgotPasswordDto) {
+        logger.info("Processando recuperação de senha para: {}", forgotPasswordDto.email());
+        User user = userRepository.findByEmail(forgotPasswordDto.email())
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com email: " + forgotPasswordDto.email()));
+
+        sendForgotPasswordEmail(user);
+    }
+
+    /**
+     * Valida o código de redefinição de senha e redefine a senha do usuário.
+     *
+     * @param resetPasswordDto DTO com email, código e nova senha
+     * @throws UserNotFoundException se o usuário não for encontrado
+     * @throws InvalidValidationCodeException se o código for inválido
+     */
+    @Transactional
+    public void resetPassword(ResetPasswordDto resetPasswordDto) {
+        logger.info("Validando código de redefinição de senha para: {}", resetPasswordDto.email());
+
+        User user = findUserByEmail(resetPasswordDto.email());
+
+        if (user.getValidationCode() == null || !user.getValidationCode().equals(resetPasswordDto.code())) {
+            logger.warn("Código de validação inválido para o usuário: {}", resetPasswordDto.email());
+            throw new InvalidValidationCodeException("Código de validação inválido.");
+        }
+
+        user.setPassword(securityConfiguration.passwordEncoder().encode(resetPasswordDto.newPassword()));
+        user.setValidationCode(null);
+        userRepository.save(user);
+
+        logger.info("Senha redefinida com sucesso para o usuário: {}", resetPasswordDto.email());
+    }
 
 }

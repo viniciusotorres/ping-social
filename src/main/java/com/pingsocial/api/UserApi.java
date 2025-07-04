@@ -240,4 +240,66 @@ public interface UserApi {
             Long userId
     );
 
+    /**
+     * Inicia o processo de recuperação de senha enviando um email com código de validação.
+     *
+     * @param forgotPasswordDto DTO contendo o email do usuário
+     * @return ResponseEntity com mensagem de sucesso ou erro
+     */
+    @Operation(
+            summary = "Solicita recuperação de senha",
+            description = "Envia um email com código de validação para recuperação de senha do usuário."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Email de recuperação enviado com sucesso",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Usuário não encontrado"
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Erro interno do servidor"
+            )
+    })
+    ResponseEntity<ApiResponseDto> forgotPassword(
+            @Valid @RequestBody ForgotPasswordDto forgotPasswordDto
+    );
+
+    /**
+     * Redefine a senha do usuário após validação do código enviado por email.
+     *
+     * @param resetPasswordDto DTO contendo email, código de validação e nova senha
+     * @return ResponseEntity com mensagem de sucesso ou erro
+     */
+    @Operation(
+            summary = "Redefine a senha do usuário",
+            description = "Redefine a senha do usuário após validação do código enviado por email."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Senha redefinida com sucesso",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Código de validação inválido"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Usuário não encontrado"
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Erro interno do servidor"
+            )
+    })
+    ResponseEntity<ApiResponseDto> resetPassword(
+            @Valid @RequestBody ResetPasswordDto resetPasswordDto
+    );
+
 }

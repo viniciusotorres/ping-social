@@ -2,6 +2,7 @@ package com.pingsocial.controller;
 
 import com.pingsocial.api.UserApi;
 import com.pingsocial.dto.*;
+import com.pingsocial.exception.InvalidValidationCodeException;
 import com.pingsocial.exception.UserNotFoundException;
 import com.pingsocial.models.User;
 import com.pingsocial.service.UserService;
@@ -297,4 +298,57 @@ public class UserController implements UserApi {
         }
     }
 
+    /**
+     * Inicia o processo de recuperação de senha enviando um email com código de validação.
+     *
+     * @param forgotPasswordDto DTO contendo o email do usuário
+     * @return ResponseEntity com mensagem de sucesso ou erro
+     */
+    @PostMapping("/forgotPassword")
+    public ResponseEntity<ApiResponseDto> forgotPassword(@Valid @RequestBody ForgotPasswordDto forgotPasswordDto) {
+        logger.info("Recebida requisição para recuperação de senha para o usuário: {}", forgotPasswordDto.email());
+
+        try {
+            userService.forgotPassword(forgotPasswordDto);
+            logger.info("Email de recuperação de senha enviado com sucesso para: {}", forgotPasswordDto.email());
+            return ResponseEntity.ok(ApiResponseDto.success("Email de recuperação de senha enviado com sucesso"));
+        } catch (UserNotFoundException e) {
+            logger.error("Usuário não encontrado durante recuperação de senha: {}", forgotPasswordDto.email());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseDto.error(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Erro ao enviar email de recuperação de senha para {}: {}", forgotPasswordDto.email(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponseDto.error("Erro interno do servidor: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Redefine a senha do usuário após validação do código enviado por email.
+     *
+     * @param resetPasswordDto DTO contendo email, código de validação e nova senha
+     * @return ResponseEntity com mensagem de sucesso ou erro
+     */
+    @PostMapping("/resetPassword")
+    public ResponseEntity<ApiResponseDto> resetPassword(@Valid @RequestBody ResetPasswordDto resetPasswordDto) {
+        logger.info("Recebida requisição para redefinição de senha para o usuário: {}", resetPasswordDto.email());
+
+        try {
+            userService.resetPassword(resetPasswordDto);
+            logger.info("Senha redefinida com sucesso para o usuário: {}", resetPasswordDto.email());
+            return ResponseEntity.ok(ApiResponseDto.success("Senha redefinida com sucesso"));
+        } catch (UserNotFoundException e) {
+            logger.error("Usuário não encontrado durante redefinição de senha: {}", resetPasswordDto.email());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseDto.error(e.getMessage()));
+        } catch (InvalidValidationCodeException e) {
+            logger.error("Código de validação inválido para o usuário: {}", resetPasswordDto.email());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponseDto.error(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Erro ao redefinir senha para {}: {}", resetPasswordDto.email(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponseDto.error("Erro interno do servidor: " + e.getMessage()));
+        }
+    }
 }
