@@ -152,18 +152,19 @@ public class SecurityConfiguration {
     public CorsConfigurationSource corsConfigurationSource() {
         logger.debug("Configurando CorsConfigurationSource");
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:4200", 
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:4200",
                 "https://ping-social-front-ym8d.vercel.app"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(true); // só funciona com origens explícitas ou patterns específicas
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 
     /**
      * Configura o gerenciador de autenticação.
