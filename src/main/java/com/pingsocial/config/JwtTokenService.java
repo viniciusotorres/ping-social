@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.pingsocial.exception.InvalidTokenException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -45,8 +46,8 @@ public class JwtTokenService {
                     .build()
                     .verify(token)
                     .getSubject();
-        } catch (JWTVerificationException e) {
-            throw new RuntimeException("Token inválido ou expirado", e);
+        }catch (JWTVerificationException e) {
+            throw new InvalidTokenException("Token inválido ou expirado", e);
         }
     }
 

@@ -259,6 +259,7 @@ public class UserService {
                                 user.getId(),
                                 user.getNickname(),
                                 getAvatarInitials(user.getEmail()),
+                                user.getEmail(),
                                 getCountFollowers(user.getEmail()),
                                 getNamesTribes(user.getEmail()),
                                 isFollowing(emailAutenticado, user.getId()),

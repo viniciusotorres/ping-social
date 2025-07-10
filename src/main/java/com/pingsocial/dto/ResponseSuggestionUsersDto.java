@@ -6,6 +6,7 @@ public record ResponseSuggestionUsersDto(
         Long id,
         String nickname,
         String avatarInitials,
+        String email,
         int countFollowers,
         List<String> namesTribes,
         boolean isFollowing,
